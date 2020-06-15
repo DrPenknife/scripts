@@ -1,0 +1,101 @@
+<html>
+<body>
+<script>
+
+function zeros(n){
+    let x = []
+    for(let i = 0; i<n; i++)x.push(0)
+    return x
+}
+
+function sigmoid(x){
+    return (1.0/(1.0+Math.exp(-x)))
+}
+
+function sigmoid_derivative(x){
+    return x*(1.0-x)    
+}
+
+function tanh_derivative(x){
+    return 1.0 - (x*x)
+}
+
+
+function dot(v1,v2){
+    return v1.map((x,i)=>x*v2[i]).reduce((a,b)=>a+b)
+}
+
+//////////////////////////////////////////////////////////
+
+var n_feat = 1
+
+let data = []
+zeros(30).map((x,i)=>{
+    let v = []
+    for(let j = 0; j < n_feat; j++)v.push(i+j)
+    // lebel
+    v.push(i+n_feat) 
+
+    data.push(v)
+})
+
+console.log(data.map(x=>JSON.stringify(x)).join("\n"))
+
+
+var W = zeros(n_feat+1)
+var nTrain = Math.floor(0.66*data.length)
+var lr = 0.1
+
+var Beta = [0.9,0.999]
+var m = zeros(n_feat+1).map(x=>[0,0])
+var v = zeros(n_feat+1).map(x=>[0,0])
+
+for(let epoch=0; epoch < 100; epoch++){
+    var dW = zeros(n_feat+1)
+    let totE = 0;
+    for(let i=0; i<nTrain; i++){
+        let x = data[i].slice(0)
+        let target = x[x.length-1]
+        x[x.length-1]=1.0
+        let err = target-dot(W,x)
+        totE+=Math.abs(err)
+        for(let j = 0; j < n_feat+1; j++)dW[j]+=(err*x[j])
+    } 
+
+    console.log("err=",totE)
+   
+    // ADAM GD https://mlfromscratch.com/optimizers-explained/#/
+    for(let j = 0; j < n_feat+1; j++){
+        let grad = -dW[j]/nTrain
+        m[j][0] = m[j][1]
+        v[j][0] = v[j][1]
+
+        m[j][1] = (1-Beta[0])*grad + Beta[0]*m[j][0]
+        v[j][1] = (1-Beta[1])*grad*grad + Beta[1]*v[j][0]
+
+        let vhat = v[j][1]/(1-Beta[1])
+        let mhat = m[j][1]/(1-Beta[0])
+
+        //console.log(m[j], " | " ,v[j])
+
+        W[j] = W[j] - lr*mhat/(Math.sqrt(vhat)+1e-8)
+    }
+}
+
+console.log("w=",W.join(","))
+
+for(let i=nTrain; i<data.length; i++){
+    let x = data[i].slice(0)
+    let target = x[x.length-1]
+    x[x.length-1]=1.0
+
+    console.log(data[i].join(",")+"-->"+dot(W,x))
+}
+
+
+//////////////////////////////////////////////////////////
+
+
+</script>
+</body> 
+</html>
